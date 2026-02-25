@@ -3,11 +3,41 @@ name: Terraform CI
 on:
   push:
     branches: [master]
+    paths:
+      - 'modules/**/*.tf'
+      - 'examples/**/*.tf'
+      - '.github/workflows/ci.yml'
   pull_request:
     branches: [master]
+    paths:
+      - 'modules/**/*.tf'
+      - 'examples/**/*.tf'
+      - '.github/workflows/ci.yml'
 
 jobs:
-  fmt:
+  # Discover modules dynamically
+  setup:
+    name: Discover Modules
+    runs-on: ubuntu-latest
+    outputs:
+      modules: ${{ steps.find-modules.outputs.modules }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Find all modules
+        id: find-modules
+        run: |
+          modules=$(find modules -name "main.tf" -type f | sed 's|/main.tf||' | sort -u | jq -R -s -c 'split("\n")[:-1]')
+          echo "modules=$modules" >> $GITHUB_OUTPUT
+          echo "Found modules: $modules"
+
+          if [ "$modules" == "[]" ] || [ "$modules" == '[""]' ]; then
+            echo "ERROR: No modules found!"
+            exit 1
+          fi
+
+  # Global format check
+  format-check:
     name: Format Check
     runs-on: ubuntu-latest
     steps:
@@ -15,37 +45,33 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.6.0"
-      - run: terraform fmt -check -recursive
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
 
-  discover-modules:
-    name: Discover Modules
-    runs-on: ubuntu-latest
-    outputs:
-      modules: ${{ steps.find.outputs.modules }}
-    steps:
-      - uses: actions/checkout@v4
-      - id: find
-        run: |
-          modules=$(find modules -mindepth 2 -maxdepth 2 -type d | sort | jq -R -s -c 'split("\n") | map(select(length > 0))')
-          echo "modules=$modules" >> "$GITHUB_OUTPUT"
-
+  # Validate each module
   validate:
-    name: Validate Modules
+    name: Validate - ${{ matrix.module }}
     runs-on: ubuntu-latest
-    needs: discover-modules
+    needs: [setup, format-check]
     strategy:
+      fail-fast: false
       matrix:
-        module: ${{ fromJson(needs.discover-modules.outputs.modules) }}
+        module: ${{ fromJson(needs.setup.outputs.modules) }}
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.6.0"
-      - run: |
+      - name: Terraform Init
+        run: |
           cd ${{ matrix.module }}
           terraform init -backend=false
+      - name: Terraform Validate
+        run: |
+          cd ${{ matrix.module }}
           terraform validate
 
+  # Lint all modules
   tflint:
     name: TFLint
     runs-on: ubuntu-latest
@@ -61,6 +87,7 @@ jobs:
             tflint --config "$(pwd)/.tflint.hcl" --chdir "$dir"
           done
 
+  # Security scan
   trivy:
     name: Security Scan
     runs-on: ubuntu-latest
@@ -72,3 +99,31 @@ jobs:
           scan-ref: modules/
           exit-code: 1
           severity: HIGH,CRITICAL
+
+  # Summary
+  ci-summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    needs: [setup, format-check, validate, tflint, trivy]
+    if: always()
+    steps:
+      - name: Check Results
+        run: |
+          echo "## CI Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Format Check: ${{ needs.format-check.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Validation: ${{ needs.validate.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- TFLint: ${{ needs.tflint.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Security Scan: ${{ needs.trivy.result }}" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ needs.format-check.result }}" == "success" && \
+                "${{ needs.validate.result }}" == "success" && \
+                "${{ needs.tflint.result }}" == "success" && \
+                "${{ needs.trivy.result }}" == "success" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "All checks passed!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Some checks failed. Please review the logs." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi

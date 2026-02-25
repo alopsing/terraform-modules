@@ -9,12 +9,26 @@ permissions:
   contents: write
   pull-requests: write
 
+concurrency:
+  group: release-please-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   release:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+
     steps:
-      - uses: googleapis/release-please-action@v4
+      - name: Create release PR
+        id: release
+        uses: googleapis/release-please-action@v4
         with:
+          release-type: terraform-module
+          package-name: terraform-modules
+          target-branch: master
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
-          target-branch: master
