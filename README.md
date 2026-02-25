@@ -1,6 +1,6 @@
 # Terraform AWS Modules
 
-[![Terraform CI](https://github.com/saikumarpola/terraform-modules/actions/workflows/ci.yml/badge.svg)](https://github.com/saikumarpola/terraform-modules/actions/workflows/ci.yml)
+[![Terraform CI](https://github.com/alopsing/terraform-modules/actions/workflows/ci.yml/badge.svg)](https://github.com/alopsing/terraform-modules/actions/workflows/ci.yml)
 [![Terraform](https://img.shields.io/badge/Terraform-%3E%3D1.6-623CE4?logo=terraform)](https://www.terraform.io/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
