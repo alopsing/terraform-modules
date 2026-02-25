@@ -1,5 +1,10 @@
 provider "aws" {
-  region = "us-east-1"
+  region                      = "us-east-1"
+  skip_credentials_validation = true
+  skip_metadata_api_check     = true
+  skip_requesting_account_id  = true
+  access_key                  = "mock_access_key"
+  secret_key                  = "mock_secret_key"
 }
 
 variables {
@@ -30,7 +35,7 @@ run "encryption_sse_s3_by_default" {
   command = plan
 
   assert {
-    condition     = aws_s3_bucket_server_side_encryption_configuration.this.rule[0].apply_server_side_encryption_by_default[0].sse_algorithm == "AES256"
+    condition     = one(aws_s3_bucket_server_side_encryption_configuration.this.rule).apply_server_side_encryption_by_default[0].sse_algorithm == "AES256"
     error_message = "Default encryption should be SSE-S3 (AES256)."
   }
 }
