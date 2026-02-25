@@ -61,14 +61,17 @@ jobs:
             tflint --config "$(pwd)/.tflint.hcl" --chdir "$dir"
           done
 
-  tfsec:
+  trivy:
     name: Security Scan
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: aquasecurity/tfsec-action@v1.0.3
+      - uses: aquasecurity/trivy-action@master
         with:
-          working_directory: modules/
+          scan-type: config
+          scan-ref: modules/
+          exit-code: 1
+          severity: HIGH,CRITICAL
 
   test:
     name: Terraform Test

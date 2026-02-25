@@ -48,7 +48,7 @@ resource "aws_security_group" "cluster" {
   )
 }
 
-resource "aws_security_group_rule" "cluster_egress" {
+resource "aws_security_group_rule" "cluster_egress" { #trivy:ignore:AVD-AWS-0104 -- EKS cluster requires outbound access for control plane communication
   type              = "egress"
   from_port         = 0
   to_port           = 0
@@ -75,7 +75,7 @@ resource "aws_cloudwatch_log_group" "cluster" {
 # EKS Cluster
 ################################################################################
 
-resource "aws_eks_cluster" "this" {
+resource "aws_eks_cluster" "this" { #trivy:ignore:AVD-AWS-0039 #trivy:ignore:AVD-AWS-0040 #trivy:ignore:AVD-AWS-0041 -- Encryption and public access are user-configurable via variables
   name     = var.cluster_name
   version  = var.cluster_version
   role_arn = aws_iam_role.cluster.arn
@@ -88,6 +88,16 @@ resource "aws_eks_cluster" "this" {
     endpoint_private_access = var.endpoint_private_access
     endpoint_public_access  = var.endpoint_public_access
     public_access_cidrs     = var.public_access_cidrs
+  }
+
+  dynamic "encryption_config" {
+    for_each = var.secrets_encryption_key_arn != null ? [1] : []
+    content {
+      provider {
+        key_arn = var.secrets_encryption_key_arn
+      }
+      resources = ["secrets"]
+    }
   }
 
   tags = merge(

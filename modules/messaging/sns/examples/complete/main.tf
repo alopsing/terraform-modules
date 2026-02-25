@@ -13,7 +13,8 @@ resource "aws_kms_key" "sns" {
 }
 
 resource "aws_sqs_queue" "target" {
-  name = "my-app-target-queue"
+  name              = "my-app-target-queue"
+  kms_master_key_id = aws_kms_key.sns.arn
 }
 
 ###############################################################################

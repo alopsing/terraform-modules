@@ -4,6 +4,7 @@ locals {
   common_tags = merge(
     {
       Module      = "sqs"
+      Name        = local.name_prefix
       Environment = var.environment
       ManagedBy   = "terraform"
     },

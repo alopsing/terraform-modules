@@ -52,7 +52,7 @@ resource "aws_security_group_rule" "ingress" {
   security_group_id = aws_security_group.this.id
 }
 
-resource "aws_security_group_rule" "egress" {
+resource "aws_security_group_rule" "egress" { #trivy:ignore:AVD-AWS-0104 -- Egress rules are user-configurable
   count = length(var.egress_rules)
 
   type              = "egress"
@@ -79,6 +79,11 @@ resource "aws_instance" "this" {
   key_name                    = var.key_name
   user_data                   = var.user_data
   iam_instance_profile        = var.iam_instance_profile
+
+  metadata_options {
+    http_endpoint = "enabled"
+    http_tokens   = "required"
+  }
 
   root_block_device {
     volume_size = var.root_volume_size

@@ -30,7 +30,7 @@ resource "aws_internet_gateway" "this" {
 # Public Subnets
 ################################################################################
 
-resource "aws_subnet" "public" {
+resource "aws_subnet" "public" { #trivy:ignore:AVD-AWS-0164 -- Public subnets require public IP mapping by design
   count = length(var.public_subnet_cidrs)
 
   vpc_id                  = aws_vpc.this.id

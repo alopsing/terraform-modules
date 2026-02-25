@@ -83,6 +83,12 @@ variable "cluster_log_types" {
   default     = ["api", "audit", "authenticator"]
 }
 
+variable "secrets_encryption_key_arn" {
+  description = "ARN of the KMS key to encrypt Kubernetes secrets. If set, enables envelope encryption for secrets."
+  type        = string
+  default     = null
+}
+
 variable "endpoint_private_access" {
   description = "Whether the EKS private API server endpoint is enabled"
   type        = bool

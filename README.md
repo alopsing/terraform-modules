@@ -108,7 +108,7 @@ module "vpc" {
 - [Terraform](https://www.terraform.io/downloads) >= 1.6.0
 - [AWS CLI](https://aws.amazon.com/cli/) configured with appropriate credentials
 - [TFLint](https://github.com/terraform-linters/tflint) (optional, for linting)
-- [tfsec](https://github.com/aquasecurity/tfsec) (optional, for security scanning)
+- [Trivy](https://github.com/aquasecurity/trivy) (optional, for security scanning)
 
 ## Quality Tooling
 
@@ -116,9 +116,9 @@ module "vpc" {
 |------|---------|--------|
 | `terraform fmt` | Code formatting | Built-in |
 | `terraform validate` | Configuration validation | Built-in |
-| `terraform test` | Plan-level testing | `tests/main.tftest.hcl` per module |
+| `terraform test` | Plan-level unit testing | `tests/unit/<module>_unit.tftest.hcl` per module |
 | [TFLint](https://github.com/terraform-linters/tflint) | Linting & best practices | `.tflint.hcl` |
-| [tfsec](https://github.com/aquasecurity/tfsec) | Security scanning | Built-in rules |
+| [Trivy](https://github.com/aquasecurity/trivy) | Security scanning | Built-in rules |
 | [terraform-docs](https://github.com/terraform-docs/terraform-docs) | Documentation generation | `.terraform-docs.yml` |
 | [pre-commit](https://pre-commit.com/) | Git hooks | `.pre-commit-config.yaml` |
 
@@ -133,10 +133,10 @@ cd modules/networking/vpc
 terraform init -backend=false
 terraform validate
 
-# Run tests for a module
+# Run unit tests for a module
 cd modules/networking/vpc
 terraform init -backend=false
-terraform test
+terraform test -test-directory=tests/unit
 
 # Lint all modules
 for dir in modules/*/*; do
@@ -144,7 +144,7 @@ for dir in modules/*/*; do
 done
 
 # Security scan
-tfsec modules/
+trivy config modules/
 ```
 
 ## Module Design Conventions
@@ -160,7 +160,8 @@ modules/<category>/<module>/
   ├── locals.tf         # Local values and common tags
   ├── README.md         # Documentation with usage examples
   ├── tests/
-  │   └── main.tftest.hcl  # Plan-level tests
+  │   └── unit/
+  │       └── <module>_unit.tftest.hcl  # Unit tests (mock credentials)
   └── examples/
       ├── basic/        # Minimal usage example
       └── complete/     # Full-featured example
