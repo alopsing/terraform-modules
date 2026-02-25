@@ -1,0 +1,98 @@
+name: Terraform CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  fmt:
+    name: Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.6.0"
+      - run: terraform fmt -check -recursive
+
+  validate:
+    name: Validate Modules
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module:
+          - modules/networking/vpc
+          - modules/compute/ec2
+          - modules/compute/eks
+          - modules/compute/lambda
+          - modules/storage/s3
+          - modules/storage/dynamodb
+          - modules/storage/rds
+          - modules/security/iam
+          - modules/messaging/sns
+          - modules/messaging/sqs
+          - modules/cdn/cloudfront
+          - modules/cdn/api-gateway
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.6.0"
+      - run: |
+          cd ${{ matrix.module }}
+          terraform init -backend=false
+          terraform validate
+
+  tflint:
+    name: TFLint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+      - run: tflint --init --config .tflint.hcl
+      - run: |
+          for dir in modules/*/*; do
+            echo "Linting $dir..."
+            tflint --config "$(pwd)/.tflint.hcl" --chdir "$dir"
+          done
+
+  tfsec:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          working_directory: modules/
+
+  test:
+    name: Terraform Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module:
+          - modules/networking/vpc
+          - modules/compute/ec2
+          - modules/compute/eks
+          - modules/compute/lambda
+          - modules/storage/s3
+          - modules/storage/dynamodb
+          - modules/storage/rds
+          - modules/security/iam
+          - modules/messaging/sns
+          - modules/messaging/sqs
+          - modules/cdn/cloudfront
+          - modules/cdn/api-gateway
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.6.0"
+      - run: |
+          cd ${{ matrix.module }}
+          terraform init -backend=false
+          terraform test

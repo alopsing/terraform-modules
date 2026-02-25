@@ -1,0 +1,12 @@
+project_name       = "my-webapp"
+environment        = "dev"
+aws_region         = "us-east-1"
+azs                = ["us-east-1a", "us-east-1b"]
+web_instance_count = 2
+web_instance_type  = "t3.small"
+db_instance_class  = "db.t3.micro"
+
+tags = {
+  Project   = "my-webapp"
+  ManagedBy = "terraform"
+}
