@@ -24,12 +24,12 @@ run "creates_ec2_instance" {
   }
 
   assert {
-    condition     = aws_instance.this[0].instance_type == "t3.micro"
+    condition     = aws_instance.this["1"].instance_type == "t3.micro"
     error_message = "Expected default instance type to be t3.micro."
   }
 
   assert {
-    condition     = aws_instance.this[0].ami == "ami-12345678"
+    condition     = aws_instance.this["1"].ami == "ami-12345678"
     error_message = "Expected AMI ID to match the provided value."
   }
 }
@@ -81,12 +81,12 @@ run "creates_ebs_volumes" {
   }
 
   assert {
-    condition     = aws_ebs_volume.this[0].size == 50
+    condition     = aws_ebs_volume.this["1-0"].size == 50
     error_message = "EBS volume size should be 50 GB."
   }
 
   assert {
-    condition     = aws_ebs_volume.this[0].encrypted == true
+    condition     = aws_ebs_volume.this["1-0"].encrypted == true
     error_message = "EBS volume should be encrypted."
   }
 }

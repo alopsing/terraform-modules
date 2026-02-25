@@ -31,15 +31,15 @@ resource "aws_internet_gateway" "this" {
 ################################################################################
 
 resource "aws_subnet" "public" { #trivy:ignore:AVD-AWS-0164 -- Public subnets require public IP mapping by design
-  count = length(var.public_subnet_cidrs)
+  for_each = local.public_subnets
 
   vpc_id                  = aws_vpc.this.id
-  cidr_block              = var.public_subnet_cidrs[count.index]
-  availability_zone       = var.azs[count.index % length(var.azs)]
+  cidr_block              = each.key
+  availability_zone       = each.value.az
   map_public_ip_on_launch = true
 
   tags = merge(local.common_tags, {
-    Name = "${local.name_prefix}-public-${var.azs[count.index % length(var.azs)]}"
+    Name = "${local.name_prefix}-public-${each.value.az}"
     Tier = "public"
   })
 }
@@ -63,9 +63,9 @@ resource "aws_route" "public_internet" {
 }
 
 resource "aws_route_table_association" "public" {
-  count = length(var.public_subnet_cidrs)
+  for_each = local.public_subnets
 
-  subnet_id      = aws_subnet.public[count.index].id
+  subnet_id      = aws_subnet.public[each.key].id
   route_table_id = aws_route_table.public[0].id
 }
 
@@ -74,33 +74,35 @@ resource "aws_route_table_association" "public" {
 ################################################################################
 
 resource "aws_subnet" "private" {
-  count = length(var.private_subnet_cidrs)
+  for_each = local.private_subnets
 
   vpc_id            = aws_vpc.this.id
-  cidr_block        = var.private_subnet_cidrs[count.index]
-  availability_zone = var.azs[count.index % length(var.azs)]
+  cidr_block        = each.key
+  availability_zone = each.value.az
 
   tags = merge(local.common_tags, {
-    Name = "${local.name_prefix}-private-${var.azs[count.index % length(var.azs)]}"
+    Name = "${local.name_prefix}-private-${each.value.az}"
     Tier = "private"
   })
 }
 
 resource "aws_route_table" "private" {
-  count = local.nat_gateway_count > 0 ? local.nat_gateway_count : (length(var.private_subnet_cidrs) > 0 ? 1 : 0)
+  for_each = local.private_route_table_keys
 
   vpc_id = aws_vpc.this.id
 
   tags = merge(local.common_tags, {
-    Name = "${local.name_prefix}-private-rt-${count.index}"
+    Name = "${local.name_prefix}-private-rt-${each.key}"
   })
 }
 
 resource "aws_route_table_association" "private" {
-  count = length(var.private_subnet_cidrs)
+  for_each = local.private_subnets
 
-  subnet_id      = aws_subnet.private[count.index].id
-  route_table_id = aws_route_table.private[var.single_nat_gateway ? 0 : count.index % length(aws_route_table.private)].id
+  subnet_id = aws_subnet.private[each.key].id
+  route_table_id = aws_route_table.private[
+    length(local.nat_azs) > 1 ? each.value.az : keys(aws_route_table.private)[0]
+  ].id
 }
 
 ################################################################################
@@ -108,34 +110,34 @@ resource "aws_route_table_association" "private" {
 ################################################################################
 
 resource "aws_eip" "nat" {
-  count = local.nat_gateway_count
+  for_each = local.nat_azs
 
   domain = "vpc"
 
   tags = merge(local.common_tags, {
-    Name = "${local.name_prefix}-nat-eip-${count.index}"
+    Name = "${local.name_prefix}-nat-eip-${each.key}"
   })
 }
 
 resource "aws_nat_gateway" "this" {
-  count = local.nat_gateway_count
+  for_each = local.nat_azs
 
-  allocation_id = aws_eip.nat[count.index].id
-  subnet_id     = aws_subnet.public[count.index].id
+  allocation_id = aws_eip.nat[each.key].id
+  subnet_id     = aws_subnet.public[local.az_to_public_subnet_cidr[each.key]].id
 
   tags = merge(local.common_tags, {
-    Name = "${local.name_prefix}-nat-${count.index}"
+    Name = "${local.name_prefix}-nat-${each.key}"
   })
 
   depends_on = [aws_internet_gateway.this]
 }
 
 resource "aws_route" "private_nat" {
-  count = local.nat_gateway_count
+  for_each = local.nat_azs
 
-  route_table_id         = aws_route_table.private[count.index].id
+  route_table_id         = aws_route_table.private[each.key].id
   destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id         = aws_nat_gateway.this[count.index].id
+  nat_gateway_id         = aws_nat_gateway.this[each.key].id
 }
 
 ################################################################################

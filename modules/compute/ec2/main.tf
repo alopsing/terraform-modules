@@ -41,26 +41,26 @@ resource "aws_security_group" "this" {
 }
 
 resource "aws_security_group_rule" "ingress" {
-  count = length(var.ingress_rules)
+  for_each = local.ingress_rules
 
   type              = "ingress"
-  from_port         = var.ingress_rules[count.index].from_port
-  to_port           = var.ingress_rules[count.index].to_port
-  protocol          = var.ingress_rules[count.index].protocol
-  cidr_blocks       = var.ingress_rules[count.index].cidr_blocks
-  description       = var.ingress_rules[count.index].description
+  from_port         = each.value.from_port
+  to_port           = each.value.to_port
+  protocol          = each.value.protocol
+  cidr_blocks       = each.value.cidr_blocks
+  description       = each.value.description
   security_group_id = aws_security_group.this.id
 }
 
 resource "aws_security_group_rule" "egress" { #trivy:ignore:AVD-AWS-0104 -- Egress rules are user-configurable
-  count = length(var.egress_rules)
+  for_each = local.egress_rules
 
   type              = "egress"
-  from_port         = var.egress_rules[count.index].from_port
-  to_port           = var.egress_rules[count.index].to_port
-  protocol          = var.egress_rules[count.index].protocol
-  cidr_blocks       = var.egress_rules[count.index].cidr_blocks
-  description       = var.egress_rules[count.index].description
+  from_port         = each.value.from_port
+  to_port           = each.value.to_port
+  protocol          = each.value.protocol
+  cidr_blocks       = each.value.cidr_blocks
+  description       = each.value.description
   security_group_id = aws_security_group.this.id
 }
 
@@ -69,7 +69,7 @@ resource "aws_security_group_rule" "egress" { #trivy:ignore:AVD-AWS-0104 -- Egre
 ################################################################################
 
 resource "aws_instance" "this" {
-  count = var.instance_count
+  for_each = local.instance_keys
 
   ami                         = var.ami_id != null ? var.ami_id : data.aws_ami.amazon_linux[0].id
   instance_type               = var.instance_type
@@ -94,7 +94,7 @@ resource "aws_instance" "this" {
   tags = merge(
     local.common_tags,
     {
-      Name = "${local.name_prefix}-${count.index + 1}"
+      Name = "${local.name_prefix}-${each.key}"
     },
   )
 
@@ -108,25 +108,25 @@ resource "aws_instance" "this" {
 ################################################################################
 
 resource "aws_ebs_volume" "this" {
-  count = var.instance_count * length(var.additional_ebs_volumes)
+  for_each = local.instance_volume_pairs
 
-  availability_zone = aws_instance.this[floor(count.index / length(var.additional_ebs_volumes))].availability_zone
-  size              = var.additional_ebs_volumes[count.index % length(var.additional_ebs_volumes)].size
-  type              = var.additional_ebs_volumes[count.index % length(var.additional_ebs_volumes)].type
-  encrypted         = var.additional_ebs_volumes[count.index % length(var.additional_ebs_volumes)].encrypted
+  availability_zone = aws_instance.this[each.value.instance_key].availability_zone
+  size              = each.value.volume.size
+  type              = each.value.volume.type
+  encrypted         = each.value.volume.encrypted
 
   tags = merge(
     local.common_tags,
     {
-      Name = "${local.name_prefix}-ebs-${floor(count.index / length(var.additional_ebs_volumes)) + 1}-${count.index % length(var.additional_ebs_volumes)}"
+      Name = "${local.name_prefix}-ebs-${each.key}"
     },
   )
 }
 
 resource "aws_volume_attachment" "this" {
-  count = var.instance_count * length(var.additional_ebs_volumes)
+  for_each = local.instance_volume_pairs
 
-  device_name = var.additional_ebs_volumes[count.index % length(var.additional_ebs_volumes)].device_name
-  volume_id   = aws_ebs_volume.this[count.index].id
-  instance_id = aws_instance.this[floor(count.index / length(var.additional_ebs_volumes))].id
+  device_name = each.value.volume.device_name
+  volume_id   = aws_ebs_volume.this[each.key].id
+  instance_id = aws_instance.this[each.value.instance_key].id
 }

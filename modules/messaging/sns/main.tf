@@ -29,11 +29,11 @@ resource "aws_sns_topic_policy" "this" {
 ###############################################################################
 
 resource "aws_sns_topic_subscription" "this" {
-  count = length(var.subscriptions)
+  for_each = { for sub in var.subscriptions : "${sub.protocol}-${sub.endpoint}" => sub }
 
   topic_arn            = aws_sns_topic.this.arn
-  protocol             = var.subscriptions[count.index].protocol
-  endpoint             = var.subscriptions[count.index].endpoint
-  filter_policy        = var.subscriptions[count.index].filter_policy
-  raw_message_delivery = var.subscriptions[count.index].raw_message_delivery
+  protocol             = each.value.protocol
+  endpoint             = each.value.endpoint
+  filter_policy        = each.value.filter_policy
+  raw_message_delivery = each.value.raw_message_delivery
 }

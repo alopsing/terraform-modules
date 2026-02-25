@@ -23,59 +23,6 @@ A production-quality collection of reusable Terraform modules for AWS infrastruc
 | **CDN** | [CloudFront](modules/cdn/cloudfront/) | CloudFront distributions with S3/ALB origins, OAC, WAF integration |
 | | [API Gateway](modules/cdn/api-gateway/) | REST API with authorizers, API keys, usage plans, CORS |
 
-## Architecture
-
-```mermaid
-graph TB
-    subgraph CDN["CDN & API"]
-        CF[CloudFront]
-        APIGW[API Gateway]
-    end
-
-    subgraph Compute
-        EC2[EC2]
-        EKS[EKS]
-        Lambda[Lambda]
-    end
-
-    subgraph Storage
-        S3[S3]
-        DDB[DynamoDB]
-        RDS[RDS]
-    end
-
-    subgraph Networking
-        VPC[VPC]
-    end
-
-    subgraph Security
-        IAM[IAM]
-    end
-
-    subgraph Messaging
-        SNS[SNS]
-        SQS[SQS]
-    end
-
-    CF --> S3
-    CF --> EC2
-    APIGW --> Lambda
-    Lambda --> DDB
-    Lambda --> SQS
-    SNS --> SQS
-    SNS --> Lambda
-    EC2 --> RDS
-    EKS --> RDS
-    EKS --> DDB
-    EC2 --> VPC
-    EKS --> VPC
-    Lambda --> VPC
-    RDS --> VPC
-    EC2 --> IAM
-    EKS --> IAM
-    Lambda --> IAM
-```
-
 ## Quick Start
 
 ```hcl

@@ -88,10 +88,10 @@ resource "aws_iam_role_policy_attachment" "vpc_access" {
 }
 
 resource "aws_iam_role_policy_attachment" "additional" {
-  count = length(var.additional_policy_arns)
+  for_each = toset(var.additional_policy_arns)
 
   role       = aws_iam_role.this.name
-  policy_arn = var.additional_policy_arns[count.index]
+  policy_arn = each.value
 }
 
 ################################################################################
@@ -99,11 +99,11 @@ resource "aws_iam_role_policy_attachment" "additional" {
 ################################################################################
 
 resource "aws_lambda_event_source_mapping" "this" {
-  count = length(var.event_source_mappings)
+  for_each = { for m in var.event_source_mappings : m.event_source_arn => m }
 
   function_name     = aws_lambda_function.this.arn
-  event_source_arn  = var.event_source_mappings[count.index].event_source_arn
-  batch_size        = var.event_source_mappings[count.index].batch_size
-  starting_position = var.event_source_mappings[count.index].starting_position
-  enabled           = var.event_source_mappings[count.index].enabled
+  event_source_arn  = each.value.event_source_arn
+  batch_size        = each.value.batch_size
+  starting_position = each.value.starting_position
+  enabled           = each.value.enabled
 }

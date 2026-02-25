@@ -10,17 +10,17 @@ output "vpc_cidr" {
 
 output "public_subnet_ids" {
   description = "List of public subnet IDs"
-  value       = aws_subnet.public[*].id
+  value       = [for s in aws_subnet.public : s.id]
 }
 
 output "private_subnet_ids" {
   description = "List of private subnet IDs"
-  value       = aws_subnet.private[*].id
+  value       = [for s in aws_subnet.private : s.id]
 }
 
 output "nat_gateway_ids" {
   description = "List of NAT gateway IDs"
-  value       = aws_nat_gateway.this[*].id
+  value       = [for n in aws_nat_gateway.this : n.id]
 }
 
 output "igw_id" {

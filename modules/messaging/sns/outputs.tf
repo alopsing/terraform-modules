@@ -15,5 +15,5 @@ output "topic_name" {
 
 output "subscription_arns" {
   description = "List of ARNs for the SNS topic subscriptions."
-  value       = aws_sns_topic_subscription.this[*].arn
+  value       = [for s in aws_sns_topic_subscription.this : s.arn]
 }
