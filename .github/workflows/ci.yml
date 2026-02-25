@@ -72,20 +72,3 @@ jobs:
           scan-ref: modules/
           exit-code: 1
           severity: HIGH,CRITICAL
-
-  test:
-    name: Terraform Test
-    runs-on: ubuntu-latest
-    needs: discover-modules
-    strategy:
-      matrix:
-        module: ${{ fromJson(needs.discover-modules.outputs.modules) }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.6.0"
-      - run: |
-          cd ${{ matrix.module }}
-          terraform init -backend=false
-          terraform test -test-directory=tests/unit

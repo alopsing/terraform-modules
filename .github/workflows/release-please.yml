@@ -15,6 +15,6 @@ jobs:
     steps:
       - uses: googleapis/release-please-action@v4
         with:
-          release-type: terraform-module
-          package-name: terraform-modules
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
           target-branch: master
