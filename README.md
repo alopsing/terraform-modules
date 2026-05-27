@@ -6,6 +6,8 @@
 
 A production-quality collection of reusable Terraform modules for AWS infrastructure, featuring consistent patterns, comprehensive testing, security scanning, and composed architecture examples.
 
+**Authored and maintained by Sai Kumar Pola** (GitHub: [@alopsing](https://github.com/alopsing)).
+
 ## Module Index
 
 | Category | Module | Description |
@@ -27,7 +29,7 @@ A production-quality collection of reusable Terraform modules for AWS infrastruc
 
 ```hcl
 module "vpc" {
-  source = "github.com/saikumarpola/terraform-modules//modules/networking/vpc"
+  source = "github.com/alopsing/terraform-modules//modules/networking/vpc"
 
   name        = "my-app"
   environment = "dev"
