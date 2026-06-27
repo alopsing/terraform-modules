@@ -14,6 +14,7 @@ variables {
   engine         = "postgres"
   engine_version = "15.4"
   instance_class = "db.t3.micro"
+  username       = "dbadmin"
   subnet_ids     = ["subnet-12345678", "subnet-87654321"]
   vpc_id         = "vpc-12345678"
 }
@@ -39,6 +40,24 @@ run "instance_creation" {
   assert {
     condition     = aws_db_instance.this.instance_class == "db.t3.micro"
     error_message = "DB instance class does not match expected value."
+  }
+}
+
+run "port_defaults_by_engine" {
+  command = plan
+
+  variables {
+    allowed_cidr_blocks = ["10.0.0.0/16"]
+  }
+
+  assert {
+    condition     = aws_db_instance.this.port == 5432
+    error_message = "Postgres engine should default to port 5432."
+  }
+
+  assert {
+    condition     = aws_security_group_rule.ingress[0].from_port == 5432
+    error_message = "Security group ingress port should match the engine default."
   }
 }
 

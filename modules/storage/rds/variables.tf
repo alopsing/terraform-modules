@@ -70,9 +70,14 @@ variable "db_name" {
 }
 
 variable "username" {
-  description = "Master username"
+  description = "Master username. No default is provided because 'admin'/'root' are reserved on some engines (MySQL/MariaDB); set an engine-appropriate value."
   type        = string
-  default     = "admin"
+}
+
+variable "port" {
+  description = "Port the database listens on. If null, defaults by engine (mysql/mariadb 3306, postgres 5432, oracle 1521, sqlserver 1433)."
+  type        = number
+  default     = null
 }
 
 variable "manage_master_user_password" {

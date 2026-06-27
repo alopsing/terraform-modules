@@ -12,6 +12,11 @@ Terraform module for creating and managing AWS S3 buckets with best-practice def
 - Bucket policy support
 - Public access block (all blocked by default)
 
+> **Note:** This module does not manage bucket ACLs. New S3 buckets default to
+> `BucketOwnerEnforced` object ownership (ACLs disabled), which is the AWS- and
+> security-recommended posture. Grant access via the `bucket_policy` input
+> rather than ACLs.
+
 ## Usage
 
 ### Basic

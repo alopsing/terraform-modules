@@ -31,6 +31,7 @@ module "rds" {
 
   engine         = "postgres"
   engine_version = "15.4"
+  username       = "dbadmin"
 
   subnet_ids = ["subnet-abc123", "subnet-def456"]
   vpc_id     = "vpc-123456"
@@ -53,6 +54,7 @@ module "rds" {
   engine         = "postgres"
   engine_version = "15.4"
   instance_class = "db.r6g.large"
+  username       = "dbadmin"
 
   allocated_storage     = 100
   max_allocated_storage = 500
@@ -89,7 +91,8 @@ module "rds" {
 | storage_encrypted | Enable encryption | bool | true | no |
 | kms_key_id | KMS key ARN | string | null | no |
 | db_name | Default database name | string | null | no |
-| username | Master username | string | "admin" | no |
+| username | Master username (no default; 'admin'/'root' are reserved on some engines) | string | - | yes |
+| port | Port the database listens on (defaults by engine if null) | number | null | no |
 | manage_master_user_password | Use Secrets Manager | bool | true | no |
 | multi_az | Enable Multi-AZ | bool | false | no |
 | subnet_ids | Subnet IDs | list(string) | - | yes |

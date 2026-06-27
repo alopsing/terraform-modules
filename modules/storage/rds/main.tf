@@ -27,8 +27,8 @@ resource "aws_security_group_rule" "ingress" {
   count = length(var.allowed_cidr_blocks) > 0 ? 1 : 0
 
   type              = "ingress"
-  from_port         = aws_db_instance.this.port
-  to_port           = aws_db_instance.this.port
+  from_port         = local.port
+  to_port           = local.port
   protocol          = "tcp"
   cidr_blocks       = var.allowed_cidr_blocks
   security_group_id = aws_security_group.this.id
@@ -108,6 +108,7 @@ resource "aws_db_instance" "this" {
 
   db_name  = var.db_name
   username = var.username
+  port     = local.port
 
   manage_master_user_password = var.manage_master_user_password
 

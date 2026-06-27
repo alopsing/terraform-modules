@@ -12,6 +12,7 @@ module "rds" {
   engine         = "postgres"
   engine_version = "15.4"
   instance_class = "db.t3.micro"
+  username       = "dbadmin"
 
   subnet_ids = ["subnet-12345678", "subnet-87654321"]
   vpc_id     = "vpc-12345678"
